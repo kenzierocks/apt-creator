@@ -100,9 +100,17 @@ class BasicProcessorTest {
     }
 
     @Test
-    fun `requires exactly one constructor`() {
+    fun `supports multiple constructors`() {
+        val result = provideBasicCompileTest("MultiConstructor.java")
+        assertThat(result).succeededWithoutWarnings()
+        assertThat(result)
+                .generatedFileEquivalent("MultiConstructorCreator.java")
+    }
+
+    @Test
+    fun `doesn't support multiple constructors with conflicting signatures`() {
         val result = provideBasicCompileTest("FailMultiConstructor.java")
         assertThat(result).failed()
-        assertThat(result).hadErrorContaining("Only one constructor allowed")
+        assertThat(result).hadErrorContaining("create() is already defined")
     }
 }

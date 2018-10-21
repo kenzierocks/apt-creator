@@ -16,14 +16,20 @@ import javax.lang.model.element.TypeElement
 
 class AptCreatorGenerator(private val creatorParameters: CreatorParameters,
                           private val generatedAnnotationElement: TypeElement?) {
-    private val providedParams = creatorParameters.constructorParameters.filter { it.isProvided }
-    private val requiredParams = creatorParameters.constructorParameters.filter { !it.isProvided }
+    // pull all provided params from each constructor
+    private val providedParams = creatorParameters.constructorParameters
+            .flatten()
+            .filter { it.isProvided }
+            .distinctBy { it.key }
+            .associate { param ->
+                param.key to param
+            }
 
     companion object {
         private val TYPE_NAME_PROVIDER = ClassName.get(Provider::class.java)
 
         private fun providerWrapping(typeName: TypeName) =
-                ParameterizedTypeName.get(TYPE_NAME_PROVIDER, typeName)
+                ParameterizedTypeName.get(TYPE_NAME_PROVIDER, typeName.box())
 
         private val CHECK_NOT_NULL_HELPER: MethodSpec = MethodSpec.methodBuilder("checkNotNull")
                 .addModifiers(Modifier.PRIVATE, Modifier.STATIC)
@@ -53,14 +59,16 @@ class AptCreatorGenerator(private val creatorParameters: CreatorParameters,
                     addModifiers(Modifier.PUBLIC, Modifier.FINAL)
                     addFields(getProviderFields())
                     addMethod(constructorSpec())
-                    addMethod(createSpec())
+                    creatorParameters.constructorParameters.forEach { params ->
+                        addMethod(createSpec(params))
+                    }
                     addMethod(CHECK_NOT_NULL_HELPER)
                 }
                 .build()
     }
 
     private fun getProviderFields(): List<FieldSpec> {
-        return providedParams.map {
+        return providedParams.values.map {
             val providerType = providerWrapping(it.type)
             FieldSpec.builder(providerType, it.providerName)
                     .addModifiers(Modifier.PRIVATE, Modifier.FINAL)
@@ -73,14 +81,14 @@ class AptCreatorGenerator(private val creatorParameters: CreatorParameters,
             .addModifiers(Modifier.PUBLIC)
             .addParameters(getProviderParameters())
             .addCode(CodeBlock.join(
-                    providedParams.mapIndexed { index, param ->
+                    providedParams.values.mapIndexed { index, param ->
                         val pName = param.providerName
                         CodeBlock.of("$[\$L;\n$]", "this.$pName = checkNotNull($pName, $index)")
                     }, ""))
             .build()
 
     private fun getProviderParameters(): List<ParameterSpec> {
-        return providedParams.map {
+        return providedParams.values.map {
             val providerType = providerWrapping(it.type)
             ParameterSpec.builder(providerType, it.providerName)
                     .apply {
@@ -90,21 +98,21 @@ class AptCreatorGenerator(private val creatorParameters: CreatorParameters,
         }
     }
 
-    private fun createSpec() = MethodSpec.methodBuilder("create")
+    private fun createSpec(params: List<ConstructorParameter>) = MethodSpec.methodBuilder("create")
             .addModifiers(Modifier.PUBLIC)
             .returns(creatorParameters.targetClassName)
-            .addParameters(getRequiredParameters())
+            .addParameters(getRequiredParameters(params))
             .addCode(CodeBlock.builder()
                     .add("$[return new \$T(", creatorParameters.targetClassName)
-                    .add(CodeBlock.join(creatorParameters.constructorParameters
+                    .add(CodeBlock.join(params
                             .mapIndexed(this@AptCreatorGenerator::loadAndCheckParameterCode),
                             ",\n"))
                     .add(");\n$]")
                     .build())
             .build()
 
-    private fun getRequiredParameters(): List<ParameterSpec> {
-        return requiredParams.map {
+    private fun getRequiredParameters(params: List<ConstructorParameter>): List<ParameterSpec> {
+        return params.filter { !it.isProvided }.map {
             ParameterSpec.builder(it.type, it.name)
                     .apply {
                         it.nullableAnnotation?.let(this::addAnnotation)
@@ -115,11 +123,17 @@ class AptCreatorGenerator(private val creatorParameters: CreatorParameters,
 
     private fun loadAndCheckParameterCode(index: Int, param: ConstructorParameter): CodeBlock {
         val value = when {
-            param.isProvided -> "${param.providerName}.get()"
+            param.isProvided -> {
+                val backingParameter = providedParams[param.key]
+                        ?: throw IllegalStateException("Missing entry for $param.")
+                "${backingParameter.providerName}.get()"
+            }
             else -> param.name
         }
+        val noNullCheck = param.nullableAnnotation != null
+                || (param.type.isPrimitive && !param.isProvided)
         return when {
-            param.nullableAnnotation != null -> CodeBlock.of("\$L", value)
+            noNullCheck -> CodeBlock.of("\$L", value)
             else -> CodeBlock.of("\$L", "checkNotNull($value, $index)")
         }
     }

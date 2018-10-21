@@ -24,6 +24,7 @@
  */
 package net.octyl.aptcreator.processor
 
+import com.google.auto.common.MoreElements
 import com.squareup.javapoet.ClassName
 import com.squareup.javapoet.JavaFile
 import net.octyl.aptcreator.GenerateCreator
@@ -112,9 +113,10 @@ class AptCreatorProcessor : AbstractProcessor() {
     }
 
     private fun interpretCreatorTarget(element: TypeElement): CreatorParameters? {
-        val constructorTarget = element.getSingleConstructor() ?: return null
-        val constructorParameters = constructorTarget.parameters
-                .map(VariableElement::toConstructorParameter)
+        val constructorTargets = element.getConstructors()
+        val constructorParameters = constructorTargets.map {
+            it.parameters.map(VariableElement::toConstructorParameter)
+        }
 
         val annotation = element.getAnnotation(GenerateCreator::class.java)
                 ?: throw IllegalStateException("Annotation cannot be null.")
@@ -142,13 +144,9 @@ class AptCreatorProcessor : AbstractProcessor() {
         return backwardsList.reversed()
     }
 
-    private fun TypeElement.getSingleConstructor(): ExecutableElement? {
-        val constructor = enclosedElements
-                .singleOrNull { e -> e.kind == ElementKind.CONSTRUCTOR }
-        if (constructor == null) {
-            messager.printMessage(Diagnostic.Kind.ERROR,
-                    "Only one constructor allowed for @GenerateCreator.", this)
-        }
-        return constructor as? ExecutableElement
+    private fun TypeElement.getConstructors(): List<ExecutableElement> {
+        return enclosedElements
+                .filter { e -> e.kind == ElementKind.CONSTRUCTOR }
+                .map(MoreElements::asExecutable)
     }
 }

@@ -23,30 +23,24 @@
  * THE SOFTWARE.
  */
 
-import java.lang.NullPointerException;
-import java.lang.String;
-import javax.annotation.Generated;
-import javax.annotation.Nullable;
-import javax.inject.Inject;
+import net.octyl.aptcreator.GenerateCreator;
+import net.octyl.aptcreator.Provided;
 
-@Generated(
-        value = "net.octyl.aptcreator.processor.AptCreatorGenerator",
-        comments = "https://github.com/kenzierocks/apt-creator"
-)
-public final class OneNullableParameterCreator {
-    @Inject
-    public OneNullableParameterCreator() {
+@GenerateCreator
+class MultiConstructor {
+    public MultiConstructor() {
     }
 
-    public OneNullableParameter create(@Nullable String string) {
-        return new OneNullableParameter(string);
+    public MultiConstructor(String constrTwo) {
     }
 
-    private static <T> T checkNotNull(T arg, int argIndex) {
-        if (arg == null) {
-            throw new NullPointerException("@GenerateCreator class was passed null to a non-null argument. Index: " + argIndex)
-        }
+    public MultiConstructor(@Provided String providedStr, double extra) {
+    }
 
-        return arg;
+    public MultiConstructor(@Provided int providedInt, int extra) {
+    }
+
+    // Ensure that using different names results in same provider injection
+    public MultiConstructor(@Provided int i, @Provided String s, long diff) {
     }
 }

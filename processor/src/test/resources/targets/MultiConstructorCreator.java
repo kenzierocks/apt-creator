@@ -23,23 +23,46 @@
  * THE SOFTWARE.
  */
 
+import java.lang.Integer;
 import java.lang.NullPointerException;
 import java.lang.String;
 import javax.annotation.Generated;
-import javax.annotation.Nullable;
 import javax.inject.Inject;
+import javax.inject.Provider;
 
 @Generated(
         value = "net.octyl.aptcreator.processor.AptCreatorGenerator",
         comments = "https://github.com/kenzierocks/apt-creator"
 )
-public final class OneNullableParameterCreator {
+public final class MultiConstructorCreator {
+    private final Provider<String> providedStrProvider;
+    private final Provider<Integer> providedIntProvider;
     @Inject
-    public OneNullableParameterCreator() {
+    public MultiConstructorCreator(Provider<String> providedStrProvider, Provider<Integer> providedIntProvider) {
+        this.providedStrProvider = checkNotNull(providedStrProvider, 0);
+        this.providedIntProvider = checkNotNull(providedIntProvider, 1);
     }
 
-    public OneNullableParameter create(@Nullable String string) {
-        return new OneNullableParameter(string);
+    public MultiConstructor create() {
+        return new MultiConstructor();
+    }
+
+    public MultiConstructor create(String constrTwo) {
+        return new MultiConstructor(checkNotNull(constrTwo, 0));
+    }
+
+    public MultiConstructor create(double extra) {
+        return new MultiConstructor(checkNotNull(providedStrProvider.get(), 0), extra);
+    }
+
+    public MultiConstructor create(int extra) {
+        return new MultiConstructor(checkNotNull(providedIntProvider.get(), 0), extra);
+    }
+
+    public MultiConstructor create(long diff) {
+        return new MultiConstructor(checkNotNull(providedIntProvider.get(), 0),
+                checkNotNull(providedStrProvider.get(), 1),
+                diff);
     }
 
     private static <T> T checkNotNull(T arg, int argIndex) {

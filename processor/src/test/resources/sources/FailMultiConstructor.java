@@ -24,12 +24,13 @@
  */
 
 import net.octyl.aptcreator.GenerateCreator;
+import net.octyl.aptcreator.Provided;
 
 @GenerateCreator
 class FailMultiConstructor {
     public FailMultiConstructor() {
     }
 
-    public FailMultiConstructor(String constrTwo) {
+    public FailMultiConstructor(@Provided String providedStr) {
     }
 }

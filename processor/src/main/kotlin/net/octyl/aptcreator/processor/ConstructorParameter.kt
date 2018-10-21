@@ -11,7 +11,11 @@ data class ConstructorParameter(val name: String,
                                 val nullableAnnotation: AnnotationSpec?,
                                 val isProvided: Boolean,
                                 val qualifierAnnotation: AnnotationSpec?) {
+
+    // A parameter is only unique by this key -- name & nullability don't matter.
+    data class UniqueKey(val type: TypeName, val qualifierAnnotation: AnnotationSpec?)
     val providerName = "${name}Provider"
+    val key = UniqueKey(type, qualifierAnnotation)
 }
 
 fun VariableElement.toConstructorParameter(): ConstructorParameter {

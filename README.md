@@ -9,8 +9,8 @@ had not updated to JDK 9+ in many months.
 `@GenerateCreator`, and any parameters that should be injected (via JSR 330)
 with `@Provided`.
 
-Multiple constructors are ~~supported as long as they don't create duplicate
-signatures after any `@Provided` arguments are dropped.~~ not yet supported.
+Multiple constructors are supported as long as they don't create duplicate
+signatures after any `@Provided` arguments are dropped.
 
 The generated class will be named the same way that Auto Factory names
 factories. A top-level class `Foo` will generate `FooCreator`. A class `Bar`
