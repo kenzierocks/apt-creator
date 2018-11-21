@@ -4,7 +4,7 @@ import org.gradle.plugins.ide.idea.model.IdeaModel
 
 plugins {
     id("net.researchgate.release") version "2.7.0"
-    id("com.techshroom.incise-blue") version "0.1.4"
+    id("com.techshroom.incise-blue") version "0.1.7"
     idea
 }
 
