@@ -4,7 +4,7 @@ import org.gradle.plugins.ide.idea.model.IdeaModel
 
 plugins {
     id("net.researchgate.release") version "2.7.0"
-    id("com.techshroom.incise-blue") version "0.1.7"
+    id("com.techshroom.incise-blue") version "0.2.0"
     idea
 }
 
@@ -18,13 +18,18 @@ subprojects {
     configure<InciseBlueExtension> {
         ide()
         license()
+        util {
+            setJavaVersion("1.8")
+        }
+    }
+}
+
+configure(listOf("annotations", "processor").map { project(":$it") }) {
+    configure<InciseBlueExtension> {
         maven {
             projectDescription = "Annotation Processor for generating creator classes"
             coords("kenzierocks", "apt-creator")
             artifactName = "${rootProject.name}-${project.name}"
-        }
-        util {
-            setJavaVersion("1.8")
         }
     }
     plugins.withId("maven-publish") {
