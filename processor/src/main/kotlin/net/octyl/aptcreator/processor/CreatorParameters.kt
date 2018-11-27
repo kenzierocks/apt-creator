@@ -25,7 +25,10 @@
 package net.octyl.aptcreator.processor
 
 import com.squareup.javapoet.ClassName
+import javax.lang.model.element.Element
 
-data class CreatorParameters(val targetClassName: ClassName,
-                             val constructorParameters: List<List<ConstructorParameter>>,
-                             val creatorClassName: String)
+data class CreatorParameters(
+        val originatingElement: Element,
+        val targetClassName: ClassName,
+        val constructorParameters: List<List<ConstructorParameter>>,
+        val creatorClassName: String)

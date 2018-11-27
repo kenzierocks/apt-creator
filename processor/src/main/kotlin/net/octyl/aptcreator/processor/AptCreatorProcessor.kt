@@ -126,7 +126,7 @@ class AptCreatorProcessor : AbstractProcessor() {
             else -> annotation.className
         }
 
-        return CreatorParameters(ClassName.get(element), constructorParameters, creatorClassName)
+        return CreatorParameters(element, ClassName.get(element), constructorParameters, creatorClassName)
     }
 
     private fun createCreatorClassName(element: TypeElement): String {

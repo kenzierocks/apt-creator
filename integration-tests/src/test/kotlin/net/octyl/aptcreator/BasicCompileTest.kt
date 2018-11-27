@@ -53,12 +53,51 @@ class BasicCompileTest {
         val result = GradleRunner.create()
                 .withProjectDir(testProjectDir.toFile())
                 .withArguments("-Si", "compileJava")
-                .forwardOutput()
                 .build()!!
 
         assertEquals(TaskOutcome.SUCCESS, result.task(":compileJava")!!.outcome)
         assertTrue(Files.exists(testProjectDir.resolve(
                 "build/classes/java/main/MainCreator.java"
         )))
+    }
+
+    @Test
+    @DisplayName("is an incremental annotation processor")
+    fun isIncrementalAnnotationProcessor(
+            @TempDirectory.TempDir testProjectDir: Path
+    ) {
+        testProjectDir.newBuildFile()
+
+        val srcDir = testProjectDir.resolve("src/main/java")
+        Files.createDirectories(srcDir)
+        srcDir.resolve("Main.java").write("""
+            @net.octyl.aptcreator.GenerateCreator
+            class Main {
+            }
+        """.trimIndent())
+
+        val result = GradleRunner.create()
+                .withProjectDir(testProjectDir.toFile())
+                .withArguments("-Si", "compileJava")
+                .build()!!
+
+        assertEquals(TaskOutcome.SUCCESS, result.task(":compileJava")!!.outcome)
+        assertTrue(Files.exists(testProjectDir.resolve(
+                "build/classes/java/main/MainCreator.java"
+        )))
+
+        // add a new file, should be incremental still:
+        srcDir.resolve("Helper.java").write("""
+            class Helper {
+            }
+        """.trimIndent())
+
+        val result2 = GradleRunner.create()
+                .withProjectDir(testProjectDir.toFile())
+                .withArguments("-Si", "compileJava")
+                .build()!!
+
+        assertEquals(TaskOutcome.SUCCESS, result2.task(":compileJava")!!.outcome)
+        assertTrue("Incremental compilation of 1 classes completed" in result2.output)
     }
 }

@@ -63,6 +63,7 @@ class AptCreatorGenerator(private val creatorParameters: CreatorParameters,
                         addMethod(createSpec(params))
                     }
                     addMethod(CHECK_NOT_NULL_HELPER)
+                    addOriginatingElement(creatorParameters.originatingElement)
                 }
                 .build()
     }
