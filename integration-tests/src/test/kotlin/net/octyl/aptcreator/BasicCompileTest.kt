@@ -8,6 +8,7 @@ import org.junitpioneer.jupiter.TempDirectory
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Path
+import java.nio.file.Paths
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -30,6 +31,7 @@ class BasicCompileTest {
 
             dependencies {
                 implementation files($classpath)
+                annotationProcessor files($classpath)
             }
         """.trimIndent())
         return buildFile
