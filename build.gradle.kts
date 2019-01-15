@@ -3,8 +3,8 @@ import net.researchgate.release.ReleaseExtension
 import org.gradle.plugins.ide.idea.model.IdeaModel
 
 plugins {
-    id("net.researchgate.release") version "2.7.0"
-    id("com.techshroom.incise-blue") version "0.2.0"
+    id("net.researchgate.release") version "2.8.0"
+    id("com.techshroom.incise-blue") version "0.3.10"
     idea
 }
 

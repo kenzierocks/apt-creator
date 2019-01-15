@@ -3,7 +3,7 @@ import com.techshroom.inciseblue.commonLib
 import org.jetbrains.kotlin.gradle.dsl.KotlinJvmCompile
 
 plugins {
-    kotlin("jvm") version "1.3.10"
+    kotlin("jvm") version "1.3.11"
 }
 
 evaluationDependsOn(":processor")
@@ -30,7 +30,7 @@ configure<InciseBlueExtension> {
 dependencies {
     implementation(kotlin("stdlib-jdk8"))
 
-    commonLib("org.junit.jupiter", "junit-jupiter", "5.3.1") {
+    commonLib("org.junit.jupiter", "junit-jupiter", "5.3.2") {
         implementation(lib("api"))
         implementation(lib("params"))
         implementation(lib("engine"))

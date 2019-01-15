@@ -4,12 +4,12 @@ import org.gradle.internal.jvm.Jvm
 import org.jetbrains.kotlin.gradle.dsl.KotlinJvmCompile
 
 plugins {
-    kotlin("jvm") version "1.3.10"
+    kotlin("jvm") version "1.3.11"
 }
 
 dependencies {
     "implementation"(group = "com.squareup", name = "javapoet", version = "1.11.1")
-    "implementation"(group = "com.google.auto", name = "auto-common", version = "0.6")
+    "implementation"(group = "com.google.auto", name = "auto-common", version = "0.10")
     "implementation"(group = "javax.inject", name = "javax.inject", version = "1")
     "implementation"(project(":annotations"))
     "implementation"(kotlin("stdlib-jdk8"))
