@@ -43,4 +43,10 @@ public @interface GenerateCreator {
      * class.
      */
     String className() default "";
+
+    /**
+     * Set this to {@code true} to copy annotations from the target class to
+     * the generated class.
+     */
+    boolean copyAnnotations() default false;
 }

@@ -37,6 +37,7 @@ import javax.lang.model.element.Element
 import javax.lang.model.element.ElementKind
 import javax.lang.model.element.ExecutableElement
 import javax.lang.model.element.Modifier
+import javax.lang.model.element.Name
 import javax.lang.model.element.TypeElement
 import javax.lang.model.element.VariableElement
 import javax.tools.Diagnostic
@@ -126,7 +127,35 @@ class AptCreatorProcessor : AbstractProcessor() {
             else -> annotation.className
         }
 
-        return CreatorParameters(element, ClassName.get(element), constructorParameters, creatorClassName)
+        val generatedAnnotationName = generatedTypeElement?.qualifiedName
+        val ourAnnotationName = GenerateCreator::class.java.name!!
+        val invalidAnnotationChecks = listOf(
+                generatedAnnotationName, ourAnnotationName
+        ).map { invalidName ->
+            val result: (Name) -> Boolean = when (invalidName) {
+                null -> ({
+                    false
+                })
+                else -> ({ testName ->
+                    invalidName.toString() == testName.toString()
+                })
+            }
+            result
+        }
+
+        val annotations = when {
+            annotation.copyAnnotations -> element.annotationMirrors
+            else -> listOf()
+        }.filterNot {
+            val type = MoreElements.asType(it.annotationType.asElement()).qualifiedName
+            invalidAnnotationChecks.any { it(type) }
+        }
+
+        return CreatorParameters(originatingElement = element,
+                targetClassName = ClassName.get(element),
+                constructorParameters = constructorParameters,
+                creatorClassName = creatorClassName,
+                classAnnotations = annotations)
     }
 
     private fun createCreatorClassName(element: TypeElement): String {

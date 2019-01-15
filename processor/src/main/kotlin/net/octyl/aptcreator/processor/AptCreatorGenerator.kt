@@ -56,6 +56,8 @@ class AptCreatorGenerator(private val creatorParameters: CreatorParameters,
                     if (generatedAnnotationElement != null) {
                         addAnnotation(generatedAnnotationSpec())
                     }
+                    addAnnotations(creatorParameters.classAnnotations
+                            .map(AnnotationSpec::get))
                     addModifiers(Modifier.PUBLIC, Modifier.FINAL)
                     addFields(getProviderFields())
                     addMethod(constructorSpec())

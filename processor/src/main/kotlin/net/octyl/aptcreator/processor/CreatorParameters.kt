@@ -25,10 +25,12 @@
 package net.octyl.aptcreator.processor
 
 import com.squareup.javapoet.ClassName
+import javax.lang.model.element.AnnotationMirror
 import javax.lang.model.element.Element
 
 data class CreatorParameters(
         val originatingElement: Element,
         val targetClassName: ClassName,
         val constructorParameters: List<List<ConstructorParameter>>,
-        val creatorClassName: String)
+        val creatorClassName: String,
+        val classAnnotations: List<AnnotationMirror>)
