@@ -25,6 +25,7 @@
 package net.octyl.aptcreator.processor
 
 import com.google.auto.common.MoreElements
+import com.google.auto.common.MoreTypes
 import com.squareup.javapoet.ClassName
 import com.squareup.javapoet.JavaFile
 import net.octyl.aptcreator.GenerateCreator
@@ -40,6 +41,7 @@ import javax.lang.model.element.Modifier
 import javax.lang.model.element.Name
 import javax.lang.model.element.TypeElement
 import javax.lang.model.element.VariableElement
+import javax.lang.model.type.MirroredTypesException
 import javax.tools.Diagnostic
 
 class AptCreatorProcessor : AbstractProcessor() {
@@ -113,6 +115,26 @@ class AptCreatorProcessor : AbstractProcessor() {
         JavaFile.builder(pkgName, typeSpec).build().writeTo(processingEnv.filer)
     }
 
+    private val baseInvalidNames: List<CharSequence?> by lazy {
+        listOf(
+                // Don't cause compile errors.
+                generatedTypeElement?.qualifiedName,
+                // Don't repeat ourselves.
+                GenerateCreator::class.java.canonicalName,
+                GenerateCreator.CopyAnnotations::class.java.canonicalName,
+                // Kotlin's metadata shouldn't be copied.
+                Metadata::class.java.canonicalName
+        )
+    }
+
+    private fun isBadAnnotationName(testName: Name, excluded: List<String>): Boolean {
+        val invalidNames: List<CharSequence?> = baseInvalidNames + excluded
+        return invalidNames.any {
+            System.err.println("$testName vs $it")
+            it != null && testName.contentEquals(it)
+        }
+    }
+
     private fun interpretCreatorTarget(element: TypeElement): CreatorParameters? {
         val constructorTargets = element.getConstructors()
         val constructorParameters = constructorTargets.map {
@@ -121,34 +143,22 @@ class AptCreatorProcessor : AbstractProcessor() {
 
         val annotation = element.getAnnotation(GenerateCreator::class.java)
                 ?: throw IllegalStateException("Annotation cannot be null.")
+        val copyAnnotations = element.getAnnotation(GenerateCreator.CopyAnnotations::class.java)
 
         val creatorClassName = when {
             annotation.className.isBlank() -> createCreatorClassName(element)
             else -> annotation.className
         }
 
-        val generatedAnnotationName = generatedTypeElement?.qualifiedName
-        val ourAnnotationName = GenerateCreator::class.java.name!!
-        val invalidAnnotationChecks = listOf(
-                generatedAnnotationName, ourAnnotationName
-        ).map { invalidName ->
-            val result: (Name) -> Boolean = when (invalidName) {
-                null -> ({
-                    false
-                })
-                else -> ({ testName ->
-                    invalidName.toString() == testName.toString()
-                })
-            }
-            result
-        }
-
         val annotations = when {
-            annotation.copyAnnotations -> element.annotationMirrors
+            copyAnnotations != null -> {
+                element.annotationMirrors.filterNot { annot ->
+                    val type = MoreElements.asType(annot.annotationType.asElement()).qualifiedName
+                    val excludedClasses = mirroredExtract { copyAnnotations.exclude }
+                    isBadAnnotationName(type, excludedClasses)
+                }
+            }
             else -> listOf()
-        }.filterNot {
-            val type = MoreElements.asType(it.annotationType.asElement()).qualifiedName
-            invalidAnnotationChecks.any { it(type) }
         }
 
         return CreatorParameters(originatingElement = element,
@@ -156,6 +166,15 @@ class AptCreatorProcessor : AbstractProcessor() {
                 constructorParameters = constructorParameters,
                 creatorClassName = creatorClassName,
                 classAnnotations = annotations)
+    }
+
+    private inline fun mirroredExtract(mirroredAccess: () -> Unit): List<String> {
+        return try {
+            mirroredAccess()
+            throw IllegalStateException("Should be using mirrored types!")
+        } catch (e: MirroredTypesException) {
+            e.typeMirrors.map { MoreTypes.asTypeElement(it).qualifiedName.toString() }
+        }
     }
 
     private fun createCreatorClassName(element: TypeElement): String {

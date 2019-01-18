@@ -48,6 +48,7 @@ class BasicCompileTest {
         val result = GradleRunner.create()
                 .withProjectDir(testProjectDir.toFile())
                 .withArguments("-Si", "compileJava")
+                .forwardOutput()
                 .build()!!
 
         assertEquals(TaskOutcome.SUCCESS, result.task(":compileJava")!!.outcome)
@@ -104,7 +105,8 @@ class BasicCompileTest {
     ) {
         singleCompileRound(testProjectDir) { srcDir ->
             srcDir.resolve("Main.java").write("""
-                @net.octyl.aptcreator.GenerateCreator(copyAnnotations = true)
+                @net.octyl.aptcreator.GenerateCreator
+                @net.octyl.aptcreator.GenerateCreator.CopyAnnotations
                 @javax.inject.Singleton
                 class Main {
                 }
@@ -121,6 +123,45 @@ class BasicCompileTest {
         assertTrue("Did not copy annotations. File content: $content") {
             content.contains("javax.inject.Singleton") &&
                     content.contains("@Singleton\npublic final class")
+        }
+        listOf("GenerateCreator", "CopyAnnotations").forEach {
+            assertFalse("$it should not be copied. File content: $content") {
+                content.contains("$it[^ ]")
+            }
+        }
+    }
+
+    @Test
+    @DisplayName("can enable annotation copying and exclude some")
+    fun canCopyAnnotationsAndExclude(
+            @TempDirectory.TempDir testProjectDir: Path
+    ) {
+        singleCompileRound(testProjectDir) { srcDir ->
+            srcDir.resolve("Main.java").write("""
+                import net.octyl.aptcreator.GenerateCreator;
+
+                @GenerateCreator
+                @GenerateCreator.CopyAnnotations(exclude = SuppressWarnings.class)
+                @javax.inject.Singleton
+                @SuppressWarnings("deprecation")
+                class Main {
+                }
+            """.trimIndent())
+        }
+
+        val mainCreatorJava = testProjectDir.resolve(
+                "build/classes/java/main/MainCreator.java"
+        )
+        assertTrue("Generated MainCreator file") { Files.exists(mainCreatorJava) }
+
+        val content = Files.newBufferedReader(mainCreatorJava, StandardCharsets.UTF_8)
+                .use(Reader::readText)
+        assertTrue("Did not copy annotations. File content: $content") {
+            content.contains("javax.inject.Singleton") &&
+                    content.contains("@Singleton\npublic final class")
+        }
+        assertFalse("Should not have copied SuppressWarnings. File content: $content") {
+            content.contains("SuppressWarnings")
         }
     }
 

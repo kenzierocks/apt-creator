@@ -45,8 +45,17 @@ public @interface GenerateCreator {
     String className() default "";
 
     /**
-     * Set this to {@code true} to copy annotations from the target class to
+     * Apply this annotation to copy annotations from the target class to
      * the generated class.
+     *
+     * <p>
+     * You can exclude individual annotations using {@link #exclude()}.
+     * </p>
      */
-    boolean copyAnnotations() default false;
+    @Target(ElementType.TYPE)
+    @Retention(RetentionPolicy.SOURCE)
+    public @interface CopyAnnotations {
+        Class<?>[] exclude() default {};
+    }
+
 }
